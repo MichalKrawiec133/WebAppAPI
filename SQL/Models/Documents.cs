@@ -15,6 +15,8 @@ public class Documents
     public string FirstName { get; set; }
     [Required]
     public string LastName { get; set; }
+    [Required]
+    public string City { get; set; }
 
     public virtual ICollection<DocumentItems> DocumentItems { get; set; } = new List<DocumentItems>();
 

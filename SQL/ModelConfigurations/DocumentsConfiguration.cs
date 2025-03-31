@@ -25,6 +25,9 @@ public class DocumentsConfiguration:IEntityTypeConfiguration<Documents>
             .IsRequired()
             .HasMaxLength(50);
 
+        builder.Property(d => d.City)
+            .IsRequired();
+
         builder.HasMany(d => d.DocumentItems)
             .WithOne(di => di.Document)
             .HasForeignKey(di => di.DocumentId)
