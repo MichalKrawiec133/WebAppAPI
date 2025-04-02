@@ -10,11 +10,13 @@ public class DocumentItems
     [Required]
     public int DocumentId { get; set; }
     [Required]
+    public int Ordinal { get; set; }
+    [Required]
     public string Product { get; set; }
     [Required]
     public int Quantity { get; set; }
     [Required]
-    public int Price { get; set; }
+    public float Price { get; set; }
     [Required]
     public int TaxRate { get; set; }
     public virtual Documents Document { get; set; }

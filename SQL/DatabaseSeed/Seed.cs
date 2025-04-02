@@ -16,13 +16,12 @@ public class Seed
 
     public void ConvertCSVtoModels()
     {
-        string documentsPath = "..\\CSVFiles\\Documents.csv";
-        string documentItemsPath = "..\\CSVFiles\\DocumentItems.csv";
+        string documentsPath = "..\\SQL\\CSVFiles\\Documents.csv";
+        string documentItemsPath = "..\\SQL\\CSVFiles\\DocumentItems.csv";
         
         
         var documentsDict = new Dictionary<int, Documents>();
-        if (!File.Exists(documentsPath))
-        
+        if (File.Exists(documentsPath))
         {
             var documentsList = new List<Documents>();
             var documentLines = File.ReadAllLines(documentsPath);
@@ -32,20 +31,20 @@ public class Seed
 
                 var document = new Documents()
                 {
-                    DocumentId = int.Parse(values[0]),
+                    
                     Type = values[1],
                     Date = DateOnly.Parse(values[2]),
-                    FirstName = values[4],
+                    FirstName = values[3],
                     LastName = values[4],
                     City = values[5],
                     DocumentItems = new List<DocumentItems>()
 
                 };
                 
-                documentsDict[document.DocumentId] = document;
+                documentsDict[int.Parse(values[0])] = document;
             }
             
-            _context.Documents.AddRange(documentsList);
+            _context.Documents.AddRange(documentsDict.Values);
         }
         else
         {
@@ -53,35 +52,33 @@ public class Seed
             Console.WriteLine("dokumenty nie istnieją");
             
         }
-
-
-        
-        if (!File.Exists(documentItemsPath))
+       
+        if (File.Exists(documentItemsPath))
         {
             var documentItemsList = new List<DocumentItems>();
             var documentItemsLines = File.ReadAllLines(documentItemsPath);
+            
             foreach (var line in documentItemsLines.Skip(1))
             {
                 var values = line.Split(';');
 
                 var documentItems = new DocumentItems()
                 {
-                    DocumentItemsId = int.Parse(values[0]),
-                    DocumentId = int.Parse(values[1]),
+                    
+                    DocumentId = int.Parse(values[0]),
+                    Ordinal = int.Parse(values[1]),
                     Product = values[2],
                     Quantity = int.Parse(values[3]),
-                    Price = int.Parse(values[4]),
+                    Price = float.Parse(values[4]),
                     TaxRate = int.Parse(values[5])
                     
                 };
+                
                 if (documentsDict.TryGetValue(documentItems.DocumentId, out var document))
                 {
-                    document.DocumentItems.Add(documentItems);
+                    document.DocumentItems.Add(documentItems); 
                 }
-                documentItemsList.Add(documentItems);
             }
-            
-            _context.DocumentItems.AddRange(documentItemsList);
         }
         else
         {
