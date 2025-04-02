@@ -23,7 +23,7 @@ public class Seed
         var documentsDict = new Dictionary<int, Documents>();
         if (File.Exists(documentsPath))
         {
-            var documentsList = new List<Documents>();
+            
             var documentLines = File.ReadAllLines(documentsPath);
             foreach (var line in documentLines.Skip(1))
             {
@@ -55,7 +55,7 @@ public class Seed
        
         if (File.Exists(documentItemsPath))
         {
-            var documentItemsList = new List<DocumentItems>();
+            
             var documentItemsLines = File.ReadAllLines(documentItemsPath);
             
             foreach (var line in documentItemsLines.Skip(1))
