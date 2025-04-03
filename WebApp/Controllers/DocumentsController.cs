@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SQL;
 using SQL.DatabaseSeed;
 using SQL.Models;
+using WebApplication1.DTO;
 
 
 namespace WebApplication1.Controllers;
@@ -20,10 +21,11 @@ public class DocumentsController: ControllerBase
         
     }
 
+    //Do wyczyszczenia bazy, do czystego testu przesyłania plików.
     [HttpDelete("ClearDatabase")]
     public async Task<IActionResult> ClearDatabase()
     {
-        //Do wyczyszczenia bazy, do czystego testu przesyłania plików.
+        
         var documents = _context.Documents.ToList();
         _context.Documents.RemoveRange(documents);
         await _context.SaveChangesAsync();
@@ -32,17 +34,82 @@ public class DocumentsController: ControllerBase
 
     }
 
+    //W celu szybkiego odbudowania bazy bez odpalania na nowo projektu lub wrzucania plików csv.
     [HttpPost("RebuildDatabase")]
     public IActionResult RebuildDatabase()
     {
-        //W celu szybkiego odbudowania bazy bez odpalania na nowo projektu lub wrzucania plików csv.
+        
         var seed = new SQL.DatabaseSeed.Seed(_context);
         seed.ConvertCSVtoModels();
         return Ok();
 
     }
     
-    
+    //wysłanie wszystkich danych. 
+    [HttpGet("GetDocuments")]
+    public async Task<IActionResult> GetDocuments()
+    {
+        var documents = await _context.Documents
+            .AsNoTracking()
+            .Include(d => d.DocumentItems) 
+            .Select(d => new DocumentsDTO
+            {
+                DocumentId = d.DocumentId,
+                Type = d.Type,
+                Date = d.Date,
+                FirstName = d.FirstName,
+                LastName = d.LastName,
+                City = d.City,
+                DocumentItems = d.DocumentItems.Select(di => new DocumentItemsDTO
+                {
+                    DocumentItemsId = di.DocumentItemsId,
+                    DocumentId = di.DocumentId,
+                    Ordinal = di.Ordinal,
+                    Product = di.Product,
+                    Quantity = di.Quantity,
+                    Price = di.Price,
+                    TaxRate = di.TaxRate
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(documents);
+    }
+
+    //wysyłanie części danych. domyślnie 50 dokumentów z ich rekordami
+    [HttpGet("GetDocuments/Partial")]
+    public async Task<IActionResult> GetDocumentsPartial(int skip = 0, int take = 50)
+    {
+        var documents = await _context.Documents
+            .Include(d => d.DocumentItems)
+            .Skip(skip)
+            .Take(take)
+            .Select(d => new DocumentsDTO
+            {
+                DocumentId = d.DocumentId,
+                Type = d.Type,
+                Date = d.Date,
+                FirstName = d.FirstName,
+                LastName = d.LastName,
+                City = d.City,
+                DocumentItems = d.DocumentItems.Select(di => new DocumentItemsDTO
+                {
+                    DocumentItemsId = di.DocumentItemsId,
+                    DocumentId = di.DocumentId,
+                    Ordinal = di.Ordinal,
+                    Product = di.Product,
+                    Quantity = di.Quantity,
+                    Price = di.Price,
+                    TaxRate = di.TaxRate
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(documents);
+    }
+
+
+    //zapisanie przesłanych danych
     [HttpPost("SaveCSV")]
     public async Task<IActionResult> UploadItemsCSV(IFormFile fileDocuments, IFormFile fileDocumentItems)
     {
@@ -84,7 +151,7 @@ public class DocumentsController: ControllerBase
         {
             throw;
         }
-
+        //pominięcie pierwszej linii
         if (!firstLineDocumentsCheck)
         {
             lineDocuments = await streamDocuments.ReadLineAsync();
@@ -179,7 +246,7 @@ public class DocumentsController: ControllerBase
             }
             
         }
-        //todo: synchronizacja id.
+        
         _context.SaveChanges();
         return Ok();
     }
