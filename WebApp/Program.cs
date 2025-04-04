@@ -10,7 +10,7 @@ builder.Services.AddDbContext<WebAppDbContext>(options =>
 
 builder.Services.AddTransient<Seed>();
 builder.Services.AddControllers();
-
+builder.Services.AddCors();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -33,7 +33,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors(policy =>
+{
+    policy.AllowAnyHeader();
+    policy.AllowCredentials();
+    policy.AllowAnyMethod();
+    policy.WithOrigins("http://localhost:4200");
 
+});
 app.UseHttpsRedirection();
 
 app.MapControllers();

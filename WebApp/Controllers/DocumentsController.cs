@@ -45,6 +45,13 @@ public class DocumentsController: ControllerBase
 
     }
     
+    [HttpGet("GetDocuments/Count")]
+    public async Task<IActionResult> GetDocumentsCount()
+    {
+        var count = await _context.Documents.CountAsync();
+        return Ok(count);
+    }
+    
     //wysłanie wszystkich danych. 
     [HttpGet("GetDocuments")]
     public async Task<IActionResult> GetDocuments()
@@ -108,7 +115,7 @@ public class DocumentsController: ControllerBase
         return Ok(documents);
     }
 
-
+//todo: tylko pierwszy documentitems przesłanego pliku się zapisuje? 
     //zapisanie przesłanych danych
     [HttpPost("SaveCSV")]
     public async Task<IActionResult> UploadItemsCSV(IFormFile fileDocuments, IFormFile fileDocumentItems)
