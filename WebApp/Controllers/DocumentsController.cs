@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Metadata;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SQL;
@@ -45,6 +46,7 @@ public class DocumentsController: ControllerBase
 
     }
     
+    //pobranie ilosci danych w bazie
     [HttpGet("GetDocuments/Count")]
     public async Task<IActionResult> GetDocumentsCount()
     {
@@ -53,36 +55,70 @@ public class DocumentsController: ControllerBase
     }
     
     //wysłanie wszystkich danych. 
+    // [HttpGet("GetDocuments")]
+    // public async Task<IActionResult> GetDocuments()
+    // {
+    //     var documents = await _context.Documents
+    //         .AsNoTracking()
+    //         .Include(d => d.DocumentItems) 
+    //         .Select(d => new DocumentsDTO
+    //         {
+    //             DocumentId = d.DocumentId,
+    //             Type = d.Type,
+    //             Date = d.Date,
+    //             FirstName = d.FirstName,
+    //             LastName = d.LastName,
+    //             City = d.City,
+    //             DocumentItems = d.DocumentItems.Select(di => new DocumentItemsDTO
+    //             {
+    //                 DocumentItemsId = di.DocumentItemsId,
+    //                 DocumentId = di.DocumentId,
+    //                 Ordinal = di.Ordinal,
+    //                 Product = di.Product,
+    //                 Quantity = di.Quantity,
+    //                 Price = di.Price,
+    //                 TaxRate = di.TaxRate
+    //             }).ToList()
+    //         })
+    //         .ToListAsync();
+    //
+    //     return Ok(documents);
+    // }
+    
+    //pobranie dokumentów csv 
     [HttpGet("GetDocuments")]
-    public async Task<IActionResult> GetDocuments()
+    public IActionResult GetDocuments()
     {
-        var documents = await _context.Documents
-            .AsNoTracking()
-            .Include(d => d.DocumentItems) 
-            .Select(d => new DocumentsDTO
-            {
-                DocumentId = d.DocumentId,
-                Type = d.Type,
-                Date = d.Date,
-                FirstName = d.FirstName,
-                LastName = d.LastName,
-                City = d.City,
-                DocumentItems = d.DocumentItems.Select(di => new DocumentItemsDTO
-                {
-                    DocumentItemsId = di.DocumentItemsId,
-                    DocumentId = di.DocumentId,
-                    Ordinal = di.Ordinal,
-                    Product = di.Product,
-                    Quantity = di.Quantity,
-                    Price = di.Price,
-                    TaxRate = di.TaxRate
-                }).ToList()
-            })
-            .ToListAsync();
+        var documents = _context.Documents.AsNoTracking().ToList();
 
-        return Ok(documents);
+        var csv = new StringBuilder();
+        csv.AppendLine("DocumentId;Type;Date;FirstName;LastName;City");
+
+        foreach (var doc in documents)
+        {
+            csv.AppendLine($"{doc.DocumentId};{doc.Type};{doc.Date};{doc.FirstName};{doc.LastName};{doc.City}");
+        }
+
+        return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", "documents.csv");
     }
+    
+    //pobranie itemów dokumentów
+    [HttpGet("GetDocumentItems")]
+    public IActionResult GetDocumentItems()
+    {
+        var items = _context.DocumentItems.AsNoTracking().ToList();
 
+        var csv = new StringBuilder();
+        csv.AppendLine("DocumentId;Ordinal;Product;Quantity;Price;TaxRate");
+
+        foreach (var item in items)
+        {
+            csv.AppendLine($"{item.DocumentId};{item.Ordinal};{item.Product};{item.Quantity};{item.Price};{item.TaxRate}");
+        }
+
+        return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", "documentItems.csv");
+    }
+    
     //wysyłanie części danych. domyślnie 50 dokumentów z ich rekordami
     [HttpGet("GetDocuments/Partial")]
     public async Task<IActionResult> GetDocumentsPartial(int skip = 0, int take = 50)
@@ -115,7 +151,7 @@ public class DocumentsController: ControllerBase
         return Ok(documents);
     }
 
-//todo: tylko pierwszy documentitems przesłanego pliku się zapisuje? 
+
     //zapisanie przesłanych danych
     [HttpPost("SaveCSV")]
     public async Task<IActionResult> UploadItemsCSV(IFormFile fileDocuments, IFormFile fileDocumentItems)
@@ -229,7 +265,7 @@ public class DocumentsController: ControllerBase
         
         //przetworzenie reszty rekordów pozycji dokumentów
         
-        while (!streamDocuments.EndOfStream)
+        while (!streamDocumentItems.EndOfStream)
         {
             lineDocumentItems = await streamDocumentItems.ReadLineAsync();
             var lineDocumentItemsSplit = lineDocumentItems.Split(";");
