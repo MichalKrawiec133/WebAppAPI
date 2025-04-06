@@ -45,7 +45,21 @@ public class DocumentsController: ControllerBase
         return Ok();
 
     }
-    
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteDocument(int id)
+    {
+        
+        var document = await _context.Documents.FindAsync(id);
+        if (document != null)
+        {
+            _context.Documents.Remove(document);
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok();
+        
+        
+    }
     //pobranie ilosci danych w bazie
     [HttpGet("GetDocuments/Count")]
     public async Task<IActionResult> GetDocumentsCount()
@@ -117,6 +131,52 @@ public class DocumentsController: ControllerBase
         }
 
         return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", "documentItems.csv");
+    }
+    
+    [HttpGet("GetDocuments/Search")]
+    public async Task<IActionResult> SearchDocuments(string field, string value)
+    {
+        var query = _context.Documents.Include(d => d.DocumentItems).AsQueryable();
+
+        switch (field.ToLower())
+        {
+            case "firstname":
+                query = query.Where(d => d.FirstName.Contains(value));
+                break;
+            case "lastname":
+                query = query.Where(d => d.LastName.Contains(value));
+                break;
+            case "city":
+                query = query.Where(d => d.City.Contains(value));
+                break;
+            default:
+                return BadRequest("Nieprawidłowe pole wyszukiwania.");
+        }
+
+        var result = await query.Select(d => new DocumentsDTO
+        {
+            DocumentId = d.DocumentId,
+            Type = d.Type,
+            Date = d.Date,
+            FirstName = d.FirstName,
+            LastName = d.LastName,
+            City = d.City,
+            DocumentItems = d.DocumentItems.Select(di => new DocumentItemsDTO
+            {
+                DocumentItemsId = di.DocumentItemsId,
+                DocumentId = di.DocumentId,
+                Ordinal = di.Ordinal,
+                Product = di.Product,
+                Quantity = di.Quantity,
+                Price = di.Price,
+                TaxRate = di.TaxRate
+            }).ToList()
+        }).ToListAsync();
+        if (result == null || result.Count == 0)
+        {
+            return NotFound("Brak wyników dla podanych kryteriów.");
+        }
+        return Ok(result);
     }
     
     //wysyłanie części danych. domyślnie 50 dokumentów z ich rekordami
